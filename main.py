@@ -1,6 +1,9 @@
 import mnist
+import numpy as np
 
+np.random.seed(23)
 imgs, ans = mnist.open_dataset("train_imgs.idx", "train_labels.idx")
+imgs = [ [ x / 255 for x in img ] for img in imgs ] # norm
 
 with open("out.txt", "w") as f:
 	for img in enumerate(imgs[:50]):

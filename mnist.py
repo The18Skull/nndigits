@@ -18,7 +18,7 @@ def read(filepath):
 	dims_len = magic[3]
 	dims = [ int.from_bytes(stream[4 * (i + 1):4 * (i + 2)], "big") for i in range(dims_len) ]
 	field_size = mult(dims[1:])
-	res = [ stream[4 * (len(dims) + 1) + i * field_size:4 * (len(dims) + 1) + (i + 1) * field_size] for i in range(dims[0]) ]
+	res = [ stream[4 * (dims_len + 1) + i * field_size:4 * (dims_len + 1) + (i + 1) * field_size] for i in range(dims[0]) ]
 	return res
 
 def open_dataset(images, labels):
