@@ -9,9 +9,6 @@ def sigmoid(x, der = False):
 		return sigm * (1.0 - sigm)
 	return sigm
 
-#X = np.array([ [ 0, 0, 1 ], [ 0, 1, 1 ], [ 1, 0, 1 ], [ 1, 1, 1 ] ])
-#y = np.array([ [ 0, 1, 1, 0 ] ]).T
-
 img = Image.open("trainset.png").convert("L")
 x = np.array(img) / 255.0
 
@@ -33,7 +30,6 @@ for i in range(10):
 			y = np.concatenate([ y, a ])
 		else:
 			y = np.vstack([ y, a ])
-#y = y.T
 
 syn0 = 2 * np.random.random((15, 10)) - 1
 
@@ -41,7 +37,7 @@ for j in range(60000):
 	a1 = np.dot(X, syn0)
 	l1 = sigmoid(a1)
 	if j % 10000 == 0:
-		print("[%d/%d] Error: %f" % (j, 60000, np.max(y - l1)))
-	l1_delta = (y - l1) * sigmoid(a1, True)
-	syn0 += X.T.dot(l1_delta)
-	#print("\n".join([ str(j), str(syn0).replace("\n", ",") ]))
+		print("[%d/%d] Error: %f" % (j, 60000, np.max(np.abs(y - l1))))
+		#print(str(syn0).replace("\n", ","))
+	l1_delta = 1.0 * (y - l1) * sigmoid(a1, True)
+	syn0 += np.dot(X.T, l1_delta)
