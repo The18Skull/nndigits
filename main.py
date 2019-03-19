@@ -1,28 +1,59 @@
-#import mnist
+import network
 import numpy as np
-from PIL import Image
+from tkinter import *
+from tkinter import messagebox
 
-def read(filename):
-	img = Image.open(filename).convert("L")
-	arr = np.array(img)
-	res = list()
-	for y in range(0, img.height, 5):
-		for x in range(0, img.width, 3):
-			i = arr[y:y + 5, x:x + 3].reshape((1, 15)).copy()
-			res.append(i)
-	return res
+class app(Tk):
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.title("GUI")
+		self.resizable(False, False)
+		self.cols = 3; self.rows = 5
+		self.width = 500; self.height = 530
+		self.geometry("%dx%d" % (self.width, self.height))
 
-#np.random.seed(23)
-dataset = read("trainset.png")
-answers = np.arange()
-print(dataset)
-#imgs, ans = mnist.open_dataset("train_imgs.idx", "train_labels.idx")
-#imgs = [ [ x / 255 for x in img ] for img in imgs ] # norm
+		w = self.cols * (self.width // self.cols)
+		h = self.rows * ((self.height - 30) // self.rows)
+		self.canvas = Canvas(self, width = w + 1, height = h + 1, bg = "white")
+		self.canvas.config(highlightthickness = False)
+		self.canvas.width = w; self.canvas.height = h
+		self.clean()
+		self.canvas.bind("<Motion>", self.draw)
+		self.canvas.pack(side = TOP)
 
-# with open("out.txt", "w") as f:
-# 	for img in enumerate(imgs[:50]):
-# 		for x in enumerate(img[1]):
-# 			if x[0] % 28 == 0:
-# 				f.write("\n\n")
-# 			f.write("%s" % ("#" if x[1] != 0 else "-"))
-# 		print(int.from_bytes(ans[img[0]], "big"), end = ", ")
+		self.action = Button(self, text = "Определить", width = 34, command = self.predict)
+		self.action.pack(side = LEFT)
+
+		self.clear = Button(self, text = "Очистить", width = 34, command = self.clean)
+		self.clear.pack(side = RIGHT)
+
+	def draw(self, ev):
+		if ev.x < self.canvas.width and ev.y < self.canvas.height:
+			x = ev.x - ev.x % (self.canvas.width // self.cols)
+			y = ev.y - ev.y % (self.canvas.height // self.rows)
+			j = x // (self.canvas.width // self.cols)
+			i = y // (self.canvas.height // self.rows)
+			if i < self.rows and j < self.cols:
+				if ev.state == 264:
+					self.arr[i, j] = 1.0
+					self.canvas.create_rectangle(x, y, x + (self.canvas.width // self.cols), y + (self.canvas.height // self.rows), fill = "blue")
+				elif ev.state == 1032:
+					self.arr[i, j] = 0.0
+					self.canvas.create_rectangle(x, y, x + (self.canvas.width // self.cols), y + (self.canvas.height // self.rows), fill = "white")
+
+	def predict(self):
+		#arr = self.arr.reshape(self.rows * self.cols)
+		arr = np.hstack([ self.arr.reshape(self.rows * self.cols), np.array([ 1.0 ]) ])
+		res = network.predict(arr)
+		messagebox.showinfo(title = "Это похоже на...", message = str(res))
+	
+	def clean(self):
+		self.canvas.delete("all")
+		self.arr = np.zeros((self.rows, self.cols))
+		for j in range(self.cols):
+			for i in range(self.rows):
+				x = j * (self.canvas.width // self.cols)
+				y = i * (self.canvas.height // self.rows)
+				self.canvas.create_rectangle(x, y, x + (self.canvas.width // self.cols), y + (self.canvas.height // self.rows))
+
+if __name__ == "__main__": app().mainloop()
