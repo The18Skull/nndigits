@@ -1,6 +1,7 @@
 import numpy as np
 from tkinter import *
 from tkinter import messagebox
+import t as tf
 
 class app(Tk):
 	def __init__(self, *args, **kwargs):
@@ -41,7 +42,10 @@ class app(Tk):
 					self.canvas.create_rectangle(x, y, x + (self.canvas.width // self.cols), y + (self.canvas.height // self.rows), fill = "white")
 
 	def predict(self):
-		messagebox.showinfo(title = "Это похоже на...", message = str(self.arr))
+		#arr = self.arr.reshape(self.rows * self.cols)
+		arr = np.hstack([ self.arr.reshape(self.rows * self.cols), np.array([ 1.0 ]) ])
+		res = tf.predict(arr)
+		messagebox.showinfo(title = "Это похоже на...", message = str(res))
 	
 	def clean(self):
 		self.canvas.delete("all")
