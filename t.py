@@ -15,7 +15,7 @@ def sigmoid(x, der = False):
 	return sigm
 
 # Чтение выборки для тренировки
-img = Image.open("trainset.png").convert("L")
+img = Image.open("trainset0.png").convert("L")
 x = np.array(img) / 255.0
 
 # Инициализация параметров слоев
@@ -38,14 +38,23 @@ X = X[r]; y = y[r]
 
 # Тренировка
 for j in range(epochs):
-	a1 = np.dot(X, syn0)
-	l1 = sigmoid(a1)
-	if j % (epochs // 10) == 0:
-		print("[%d/%d] Error: %f" % (j, epochs, np.max(np.abs(y - l1))))
-		#print(str(syn0).replace("\n", ","))
-	l1_delta = h * (y - l1) * sigmoid(a1, True)
-	syn0 += np.dot(X.T, l1_delta)
-print("[FINISHED] Error: %f" % (np.max(np.abs(y - l1))))
+	for i in range(len(X)):
+		a1 = np.dot(X[i], syn0)
+		l1 = sigmoid(a1)
+		if j % (epochs // 10) == 0 and i == 0:
+			print("[%d/%d] Error: %f" % (j, epochs, np.max(np.abs(y[i] - l1))))
+			#print(str(syn0).replace("\n", ","))
+		l1_delta = h * (y[i] - l1) * sigmoid(a1, True)
+		syn0 += np.dot(X[i].reshape((len(X[i]), 1)), l1_delta.reshape((1, len(l1_delta))))
+	# INCORRECT !!!
+	# a1 = np.dot(X, syn0)
+	# l1 = sigmoid(a1)
+	# if j % (epochs // 10) == 0:
+	# 	print("[%d/%d] Error: %f" % (j, epochs, np.max(np.abs(y - l1))))
+	# 	#print(str(syn0).replace("\n", ","))
+	# l1_delta = h * (y - l1) * sigmoid(a1, True)
+	# syn0 += np.dot(X.T, l1_delta)
+print("[FINISHED] Average error: %f" % (np.max(np.abs(y - sigmoid(np.dot(X, syn0))))))
 
 # Предсказание
 def predict(X):
