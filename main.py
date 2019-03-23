@@ -8,7 +8,7 @@ class app(Tk):
 		super().__init__(*args, **kwargs)
 		self.title("GUI")
 		self.resizable(False, False)
-		self.cols = 3; self.rows = 5
+		self.cols = 28; self.rows = 28
 		self.width = 500; self.height = 530
 		self.geometry("%dx%d" % (self.width, self.height))
 
@@ -35,7 +35,7 @@ class app(Tk):
 			i = y // (self.canvas.height // self.rows)
 			if i < self.rows and j < self.cols:
 				if ev.state == 264:
-					self.arr[i, j] = 1.0
+					self.arr[i, j] = 255
 					self.canvas.create_rectangle(x, y, x + (self.canvas.width // self.cols), y + (self.canvas.height // self.rows), fill = "blue")
 				elif ev.state == 1032:
 					self.arr[i, j] = 0.0
@@ -43,13 +43,13 @@ class app(Tk):
 
 	def predict(self):
 		#arr = self.arr.reshape(self.rows * self.cols)
-		arr = np.hstack([ self.arr.reshape(self.rows * self.cols), np.array([ 1.0 ]) ])
-		res = network.predict(arr)
+		arr = np.hstack([ self.arr.reshape(self.rows * self.cols), np.array([ 255 ]) ])
+		res = network.predict(arr / 255)
 		messagebox.showinfo(title = "Это похоже на...", message = str(res))
 	
 	def clean(self):
 		self.canvas.delete("all")
-		self.arr = np.zeros((self.rows, self.cols))
+		self.arr = np.zeros((self.rows, self.cols), dtype = np.uint8)
 		for j in range(self.cols):
 			for i in range(self.rows):
 				x = j * (self.canvas.width // self.cols)
