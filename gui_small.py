@@ -1,7 +1,7 @@
-import network_one
 import numpy as np
 from tkinter import *
 from tkinter import messagebox
+import network_one as network
 
 class app(Tk):
 	def __init__(self, *args, **kwargs):

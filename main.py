@@ -2,7 +2,7 @@ import network
 import numpy as np
 from tkinter import *
 from tkinter import messagebox
-from PIL import Image
+#from PIL import Image
 
 def center_image(img):
 	height, width = img.shape # image sizes
@@ -68,10 +68,10 @@ class app(Tk):
 
 	def predict(self):
 		#arr = self.arr.reshape(self.rows * self.cols)
-		centred = center_image(self.arr)
-		#img = Image.fromarray(centred, "L")
+		centered = center_image(self.arr)
+		#img = Image.fromarray(centered, "L")
 		#img.show()
-		arr = np.hstack([ centred.reshape(self.rows * self.cols), np.array([ 255 ]) ])
+		arr = np.hstack([ centered.reshape(self.rows * self.cols), np.array([ 255 ]) ])
 		res = network.predict(arr / 255)
 		messagebox.showinfo(title = "Это похоже на...", message = str(res))
 	
