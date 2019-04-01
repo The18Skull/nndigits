@@ -1,14 +1,14 @@
-import mnist
 import numpy as np
+from PIL import Image
 
-np.random.seed(23) # кочегарим рандом
+#np.random.seed(23) # кочегарим рандом
 
 fast = True # учиться или прочитать из файла
 h = 1.0 # скорость обучения
-epochs = 5 # количество эпох
-width = 28; height = 28 # размеры картинок
+epochs = 50000 # количество эпох
+width = 3; height = 5 # размеры картинок
 vals = 10 # количество вариантов ответов
-l2_count = 32 # количество нейронов скрытого слоя
+l2_count = 12 # количество нейронов скрытого слоя
 
 # Функции активации
 def sigmoid(x, der = False):
@@ -17,59 +17,75 @@ def sigmoid(x, der = False):
 		return sigm * (1.0 - sigm)
 	return sigm
 
-if fast:
+# Чтение выборки для тренировки
+img = Image.open("trainset.png").convert("L")
+x = np.array(img, dtype = np.uint8)
+
+# Инициализация параметров слоев
+k = 0
+X = np.full(((img.width // width) * (img.height // height), width * height + 1), 255, dtype = np.uint8)
+for i in range(0, img.height, height):
+	for j in range(0, img.width, width):
+		X[k, :-1] = x[i:i + 5, j:j + 3].reshape(height * width)
+		k += 1
+Y = np.repeat(np.eye(vals, dtype = np.uint8), len(X) // vals, axis = 0)
+
+if fast is True:
 	syn0 = np.load("syn0.npy")
 	syn1 = np.load("syn1.npy")
 else:
-	# Инициализация параметров слоев
-	X, z = mnist.open_dataset("train_imgs.idx", "train_labels.idx") # Чтение выборки для тренировки
-
-	X = np.hstack((X, np.full((len(X), 1), 255)))
-	X = X / 255
-
-	y = np.zeros((len(X), vals))
-	for i in range(len(y)):
-		y[i][z[i]] = 1
-
+	# Подготавливаем веса для тренировки
+	x = X / 255; y = Y.copy()
 	syn0 = 2 * np.random.random((height * width + 1, l2_count)) - 1
 	syn1 = 2 * np.random.random((l2_count, vals)) - 1
 
+	# Перемешиваем
+	r = np.arange(len(x))
+	np.random.shuffle(r)
+	x = x[r]; y = y[r]
+
 	# Тренировка
-	err = 1.0
 	print("[STARTED] Training is in progress...")
 	for j in range(epochs):
-		for i in range(len(X)):
-			a1 = np.dot(X[i], syn0); l1 = sigmoid(a1)
+		for i in range(len(x)):
+			a1 = np.dot(x[i], syn0); l1 = sigmoid(a1)
 			a2 = np.dot(l1, syn1); l2 = sigmoid(a2)
-			err = 0.99 * err + 0.01 * (np.amax((y[i] - l2) ** 2))
-			#print("[%d/%d] Error: %f (%d)" % (j, epochs, err, i))
 			if j % (epochs // 10) == 0 and i == 0:
+				err = np.amax(np.abs(y[i] - l2))
 				print("[%d/%d] Error: %f" % (j, epochs, err))
 			l2_delta = (y[i] - l2) * sigmoid(a2, True)
 			l1_delta = np.dot(l2_delta, syn1.T) * sigmoid(a1, True)
 			syn1 += h * np.dot(l1.reshape((len(l1), 1)), l2_delta.reshape((1, len(l2_delta))))
-			syn0 += h * np.dot(X[i].reshape((len(X[i]), 1)), l1_delta.reshape((1, len(l1_delta))))
-		h /= 2
+			syn0 += h * np.dot(x[i].reshape((len(x[i]), 1)), l1_delta.reshape((1, len(l1_delta))))
 	np.save("syn0", syn0); np.save("syn1", syn1) # Сохраняем результат дял потомков
-	print("[FINISHED] Average error: %f" % (np.mean((y - sigmoid(np.dot(sigmoid(np.dot(X, syn0)), syn1))) ** 2)))
-
-# Тестирование
-# Инициализация параметров слоев
-X, z = mnist.open_dataset("test_imgs.idx", "test_labels.idx") # Чтение выборки для тренировки
-
-X = np.hstack((X, np.full((len(X), 1), 255)))
-X = X / 255
-
-y = np.zeros((len(X), vals))
-for i in range(len(y)):
-	y[i][z[i]] = 1
-
-print("[TESTS] Average error: %f" % (np.mean((y - sigmoid(np.dot(sigmoid(np.dot(X, syn0)), syn1))) ** 2)))
-
-print("[!] Ready to predict")
+print("[FINISHED] Average error: %f" % (np.amax(np.abs(Y - sigmoid(np.dot(sigmoid(np.dot(X / 255, syn0)), syn1))))))
 
 # Предсказание
 def predict(X):
 	a1 = np.dot(X, syn0); l1 = sigmoid(a1)
 	a2 = np.dot(l1, syn1); l2 = sigmoid(a2)
 	return np.argmax(l2)
+
+# Чтение выборки для проверки с шумом
+img = Image.open("trainset0.png").convert("L") # идеальные значения каждого символа
+X = np.array(img, dtype = np.uint8).reshape((vals, width * height))
+X = np.hstack([X, np.full((vals, 1), 255, dtype = np.uint8)])
+Y = np.eye(vals, dtype = np.uint8)
+
+# Проверка с шумом
+succ = 0
+for i in range(vals): # для всех идеальных изображений
+	r = np.argmax(Y[i]) # текущий символ
+	print("Number %d:" % r)
+	for j in range(1, 5, 1): # размер шума (от 1 до 4)
+		res = np.empty(15, dtype = np.uint8)
+		for k in range(len(res)): # количество экспериментов для каждого изображения
+			img = X[i].copy()
+			v = np.arange(width * height)
+			np.random.shuffle(v); v = v[:j] # выбираем где шуметь
+			img[v] = ~img[v] # реверсим выбранные пиксели
+			res[k] = predict(img / 255)
+		s = len(np.where(res == r)[0])
+		succ += s
+		print("\tNoise: %d pixels; Accuracy: %f" % (j, s / len(res)))
+print("[SUCCESS] %d of %d (%f)" % (succ, vals * 4 * len(res), succ / (vals * 4 * len(res))))
