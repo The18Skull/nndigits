@@ -33,7 +33,7 @@ class app(Tk):
 		super().__init__(*args, **kwargs)
 		self.title("GUI")
 		self.resizable(False, False)
-		self.cols = 28; self.rows = 28
+		self.cols = 3; self.rows = 5
 		self.width = 500; self.height = 530
 		self.geometry("%dx%d" % (self.width, self.height))
 
@@ -68,10 +68,10 @@ class app(Tk):
 
 	def predict(self):
 		#arr = self.arr.reshape(self.rows * self.cols)
-		centered = center_image(self.arr)
+		#centered = center_image(self.arr)
 		#img = Image.fromarray(centered, "L")
 		#img.show()
-		arr = np.hstack([ centered.reshape(self.rows * self.cols), np.array([ 255 ]) ])
+		arr = np.hstack([ self.arr.reshape(self.rows * self.cols), np.array([ 255 ]) ])
 		res = network.predict(arr / 255)
 		messagebox.showinfo(title = "Это похоже на...", message = str(res))
 	
